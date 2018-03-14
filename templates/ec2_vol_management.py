@@ -36,6 +36,24 @@ def create_snapshot(ec2, reg):
         # Add volume name to snapshot for easier identification
         snapshot.create_tags(Tags=snapshot_tags)
 
+def cleanup_detach_snapshot(ec2, aws_account_id, dry_run=True):
+    """This will delete all snapshot that is created automatically by the aws related to ami image but the ami is no longer available (by de-registering)
+    """
+    images = ec2.images.filter(Owners=[aws_account_id])
+    images = [image.id for image in images]
+    for snapshot in ec2.snapshots.filter(OwnerIds=[aws_account_id]):
+        r = re.match(r".*for (ami-.*) from.*", snapshot.description)
+        if r:
+            if r.groups()[0] not in images:
+                print("Deleting %s" % snapshot.snapshot_id)
+                snapshot.delete(DryRun=dry_run)
+
+def deregister_ami():
+    """TBA WIll deregister ami based on some conditions <TBA>
+
+    """
+    pass
+
 def cleanup_old_snapshots(
         ec2resource,
         retention_days=7,
@@ -93,5 +111,6 @@ def lambda_handler(event, context):
 
         ec2resource = ses.resource('ec2', region_name=reg)
         cleanup_old_snapshots(ec2resource, retention_days={{ retention_days|default(7) }}, dry_run=False)
+        cleanup_detach_snapshot(ec2resource, '{{ aws_account_id }}', dry_run=False)
 
     return 'OK'

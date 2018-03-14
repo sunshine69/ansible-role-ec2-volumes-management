@@ -14,6 +14,8 @@ This role will:
 Requirements
 ------------
 
+- `aws_account_id` - Required - The account id that you want to scan for objects.
+
 - `aws_profile_account` - Optional
 
   If you run without supplying the variable `profile` and `region` it will use a role
