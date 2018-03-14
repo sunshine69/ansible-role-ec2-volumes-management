@@ -15,36 +15,36 @@
     sts_creds: "{{ (sts_result|default({})).sts_creds|default({}) }}"
   no_log: yes
 
-- name: Create the IAM role to be used for the lambda function
-  iam_role:
-    region: "{{ region|default(omit) }}"
-    profile: "{{ profile|default(omit) }}"
-    aws_access_key: "{{ sts_creds.access_key|default(omit) }}"
-    aws_secret_key: "{{ sts_creds.secret_key|default(omit) }}"
-    security_token: "{{ sts_creds.session_token|default(omit) }}"
-    name: "{{ iam_role_name }}"
-    path: '/'
-    state: present
-    assume_role_policy_document: "{{ lookup('file', 'ec2-trust-policy.json') }}"
-    managed_policy: "{{ iam_managed_policies|default([]) }}"
-  register: iam_result
-
-- name: sleeping for 10 sec for the role to be available.
-  pause: seconds=10
-  when: iam_result.changed
-
-- name: Create and attach instance_role_policies
-  iam_policy:
-    region: "{{ region|default(omit) }}"
-    profile: "{{ profile|default(omit) }}"
-    aws_access_key: "{{ sts_creds.access_key|default(omit) }}"
-    aws_secret_key: "{{ sts_creds.secret_key|default(omit) }}"
-    security_token: "{{ sts_creds.session_token|default(omit) }}"
-    iam_type: role
-    iam_name: "{{ iam_role_name }}"
-    policy_name: "{{ iam_role_name }}-pol"
-    policy_json: "{{ lookup('template', iam_role_name + '-policy.json.j2') }}"
-    state: present
+#- name: Create the IAM role to be used for the lambda function
+#  iam_role:
+#    region: "{{ region|default(omit) }}"
+#    profile: "{{ profile|default(omit) }}"
+#    aws_access_key: "{{ sts_creds.access_key|default(omit) }}"
+#    aws_secret_key: "{{ sts_creds.secret_key|default(omit) }}"
+#    security_token: "{{ sts_creds.session_token|default(omit) }}"
+#    name: "{{ iam_role_name }}"
+#    path: '/'
+#    state: present
+#    assume_role_policy_document: "{{ lookup('file', 'ec2-trust-policy.json') }}"
+#    managed_policy: "{{ iam_managed_policies|default([]) }}"
+#  register: iam_result
+#
+#- name: sleeping for 10 sec for the role to be available.
+#  pause: seconds=10
+#  when: iam_result.changed
+#
+#- name: Create and attach instance_role_policies
+#  iam_policy:
+#    region: "{{ region|default(omit) }}"
+#    profile: "{{ profile|default(omit) }}"
+#    aws_access_key: "{{ sts_creds.access_key|default(omit) }}"
+#    aws_secret_key: "{{ sts_creds.secret_key|default(omit) }}"
+#    security_token: "{{ sts_creds.session_token|default(omit) }}"
+#    iam_type: role
+#    iam_name: "{{ iam_role_name }}"
+#    policy_name: "{{ iam_role_name }}-pol"
+#    policy_json: "{{ lookup('template', iam_role_name + '-policy.json.j2') }}"
+#    state: present
 
 - name: Get tempfile
   tempfile:
@@ -65,11 +65,18 @@
 - include_role:
     name: ansible-role-aws-lambda
   vars:
+    aws_lambda_profile: "{{ profile|default() }}"
+    aws_lambda_region: "{{ region|default() }}"
+    aws_lambda_access_key: "{{ sts_creds.access_key|default() }}"
+    aws_lambda_secret_key: "{{ sts_creds.secret_key|default() }}"
+    aws_lambda_security_token: "{{ sts_creds.session_token|default() }}"
     aws_lambda_function_name: "{{ lambda_function_name }}"
     aws_lambda_handler: "{{ lambda_function_name }}.lambda_handler"
     aws_lambda_runtime: "{{ lambda_runtime }}"
     aws_lambda_zip_file: "{{ tempfile.path }}.zip"
     aws_lambda_iam_role: "{{ iam_role_name }}"
+    aws_lambda_iam_role_policy: "{{ lookup('template', iam_role_name + '-policy.json.j2') }}"
+    aws_lambda_iam_role_trust_policy: "{{ lookup('file', 'ec2-trust-policy.json') }}"
     aws_lambda_scheduled_rule_name: "{{ lambda_function_name }}-cloudwatch-rule"
     aws_lambda_scheduled_rule_description: "Run {{ lambda_function_name }}"
     aws_lambda_scheduled_rule_expression: '{{ lambda_scheduled_rule_expression }}'
