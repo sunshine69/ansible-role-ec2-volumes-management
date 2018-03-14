@@ -17,18 +17,18 @@
 
 - name: Get tempfile
   tempfile:
-    state: file
+    state: directory
   register: tempfile
 
 - name: Template the python script file
   template:
     src: "{{ lambda_function_name }}.py"
-    dest: "{{ tempfile.path }}.py"
+    dest: "{{ tempfile.path }}/{{ lambda_function_name }}.py"
 
 - name: Create zip file
   archive:
-    path: "{{ tempfile.path }}.py"
-    dest: "{{ tempfile.path }}.zip"
+    path: "{{ tempfile.path }}/{{ lambda_function_name }}.py"
+    dest: "{{ tempfile.path }}/{{ lambda_function_name }}.zip"
     format: zip
 
 - include_role:
@@ -42,7 +42,7 @@
     aws_lambda_function_name: "{{ lambda_function_name }}"
     aws_lambda_handler: "{{ lambda_function_name }}.lambda_handler"
     aws_lambda_runtime: "{{ lambda_runtime }}"
-    aws_lambda_zip_file: "{{ tempfile.path }}.zip"
+    aws_lambda_zip_file: "{{ tempfile.path }}/{{ lambda_function_name }}.zip"
     aws_lambda_iam_role: "{{ iam_role_name }}"
     aws_lambda_iam_role_policy: "{{ lookup('template', iam_role_name + '-policy.json.j2') }}"
     aws_lambda_iam_role_trust_policy: "{{ lookup('file', 'ec2-trust-policy.json') }}"
@@ -52,9 +52,5 @@
 
 - name: Cleanup tempfile
   file:
-    path: "{{ item }}"
+    path: "{{ tempfile.path }}"
     state: absent
-  with_items:
-    - "{{ tempfile.path }}.zip"
-    - "{{ tempfile.path }}.py"
-    - "{{ tempfile.path }}"

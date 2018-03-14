@@ -1,7 +1,7 @@
 ---
 # defaults file for ansible-role-ec2-volume-management
 iam_role_name: "volume-management-iam-role"
-lambda_function_name: "ec2-vol-management"
+lambda_function_name: "ec2_vol_management"
 lambda_runtime: python2.7
 # Default run daily
 lambda_scheduled_rule_expression: 'cron(0 1 * * ? *)'
