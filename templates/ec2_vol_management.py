@@ -92,6 +92,6 @@ def lambda_handler(event, context):
         create_snapshot(ec2, reg)
 
         ec2resource = ses.resource('ec2', region_name=reg)
-        cleanup_old_snapshots(ec2resource, retention_days={{ retention_days|default(7) }})
+        cleanup_old_snapshots(ec2resource, retention_days={{ retention_days|default(7) }}, dry_run=False)
 
     return 'OK'

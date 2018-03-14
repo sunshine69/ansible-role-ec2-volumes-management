@@ -8,7 +8,7 @@ This role will:
 - Then create a snapshot backup daily. Snapshot will be tag with the same 'Name' and a key 'Backup'
 
 - Scan all snapshot in the `regions` with creation time longer than `retention_days` days with tag 'Name': '\*' and 'Backup': yes
-- Then remove them
+- Then remove them except the last 1 backup
 
 
 Requirements
