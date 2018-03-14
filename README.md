@@ -7,7 +7,7 @@ This role will:
 - Scan all volumes in the `regions` with tag Backup: yes and Status: in-use
 - Then create a snapshot backup daily. Snapshot will be tag with the same 'Name' and a key 'Backup'
 
-- Scan all snapshot the `regions` with creation time longer than `retention_days` days with tag 'Name': '\*' and 'Backup': yes
+- Scan all snapshot in the `regions` with creation time longer than `retention_days` days with tag 'Name': '\*' and 'Backup': yes
 - Then remove them
 
 
@@ -36,15 +36,7 @@ Role Variables
 
 - `retention_days` - Optional - Default: 7 - Number of days to keep snapshot.
 
-- `iam_role_name` - Options - Default:  "volume-management-iam-role"
-
-  The iam role name to be used for lambda
-
-- `lambda_function_name` - Optional - Default:  "ec2-vol-management"
-
-- `lambda_runtime` - Optional - Default: python2.7
-
-- `lambda_scheduled_rule_expression` - Optional - Default: 'cron(0 1 * * ? *)' (run daily)
+- `lambda_scheduled_rule_expression` - Optional - Default: 'cron(0 1 \* \* ? \*)' (run daily)
 
 
 Dependencies
@@ -54,11 +46,14 @@ Dependencies
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+```
+- hosts: localhost
+  vars:
+    region: "ap-southeast-2"
+    profile: "act2_non_prod"
+  roles:
+    - ec2-volumes-management
+```
 
 License
 -------
@@ -68,4 +63,4 @@ BSD
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Steve Kieu, XVT Solutions (steve.kieu@xvt.com.au)
