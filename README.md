@@ -10,6 +10,7 @@ This role will:
 - Scan all snapshot in the `regions` with creation time longer than `retention_days` days with tag 'Name': '\*' and 'Backup': yes
 - Then remove them except the last 1 backup
 
+- Scan and remove all snapshots that was created by the AMI launch but AMI has already been de-registered.
 
 Requirements
 ------------
