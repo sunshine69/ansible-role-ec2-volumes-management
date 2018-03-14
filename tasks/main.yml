@@ -62,7 +62,8 @@
     dest: "{{ tempfile.path }}.zip"
     format: zip
 
-- include_role: ansible-role-aws-lambda
+- include_role:
+    name: ansible-role-aws-lambda
   vars:
     aws_lambda_function_name: "{{ lambda_function_name }}"
     aws_lambda_handler: "{{ lambda_function_name }}.lambda_handler"
