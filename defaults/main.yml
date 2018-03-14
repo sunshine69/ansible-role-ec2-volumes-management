@@ -3,8 +3,8 @@
 iam_role_name: "volume-management-iam-role"
 lambda_function_name: "ec2_vol_management"
 lambda_runtime: python2.7
-# Default run daily
-lambda_scheduled_rule_expression: 'cron(0 1 * * ? *)'
+# Default run daily. Note that this is GMT time in aws event
+lambda_scheduled_rule_expression: 'cron(0 12 * * ? *)'
 # Python string as a list of regions you want to scan for volumes. It will be
 # templated into the python scripts.
 regions: "['ap-southeast-2']"
