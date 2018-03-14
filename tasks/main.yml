@@ -1,0 +1,83 @@
+---
+# tasks file for ansible-role-ec2-volume-management
+- include_role:
+   name: aws_profile_account
+  vars:
+# iam role arn for this ec2 I am running to assume so that I have the
+# permission to do this tasks
+    aws_profile_account_role_arn: "{{ profile_account_role_arn|default() }}"
+    aws_profile_account_role_session_name: 'role: ec2-volume-management'
+    aws_profile_account_region: "{{ profile_account_region|default(region|default()) }}"
+  when: not profile|default()
+
+- name: set credentials fact
+  set_fact:
+    sts_creds: "{{ (sts_result|default({})).sts_creds|default({}) }}"
+  no_log: yes
+
+- name: Create the IAM role to be used for the lambda function
+  iam_role:
+    region: "{{ region|default(omit) }}"
+    profile: "{{ profile|default(omit) }}"
+    aws_access_key: "{{ sts_creds.access_key|default(omit) }}"
+    aws_secret_key: "{{ sts_creds.secret_key|default(omit) }}"
+    security_token: "{{ sts_creds.session_token|default(omit) }}"
+    name: "{{ iam_role_name }}"
+    path: '/'
+    state: present
+    assume_role_policy_document: "{{ lookup('file', 'ec2-trust-policy.json') }}"
+    managed_policy: "{{ iam_managed_policies|default([]) }}"
+  register: iam_result
+
+- name: sleeping for 10 sec for the role to be available.
+  pause: seconds=10
+  when: iam_result.changed
+
+- name: Create and attach instance_role_policies
+  iam_policy:
+    region: "{{ region|default(omit) }}"
+    profile: "{{ profile|default(omit) }}"
+    aws_access_key: "{{ sts_creds.access_key|default(omit) }}"
+    aws_secret_key: "{{ sts_creds.secret_key|default(omit) }}"
+    security_token: "{{ sts_creds.session_token|default(omit) }}"
+    iam_type: role
+    iam_name: "{{ iam_role_name }}"
+    policy_name: "{{ iam_role_name }}-pol"
+    policy_json: "{{ lookup('template', iam_role_name + '-policy.json.j2') }}"
+    state: present
+
+- name: Get tempfile
+  tempfile:
+    state: file
+  register: tempfile
+
+- name: Template the python script file
+  template:
+    src: "{{ lambda_function_name }}.py"
+    dest: "{{ tempfile.path }}.py"
+
+- name: Create zip file
+  archive:
+    path: "{{ tempfile.path }}.py"
+    dest: "{{ tempfile.path }}.zip"
+    format: zip
+
+- include_role: ansible-role-aws-lambda
+  vars:
+    aws_lambda_function_name: "{{ lambda_function_name }}"
+    aws_lambda_handler: "{{ lambda_function_name }}.lambda_handler"
+    aws_lambda_runtime: "{{ lambda_runtime }}"
+    aws_lambda_zip_file: "{{ tempfile.path }}.zip"
+    aws_lambda_iam_role: "{{ iam_role_name }}"
+    aws_lambda_scheduled_rule_name: "{{ lambda_function_name }}-cloudwatch-rule"
+    aws_lambda_scheduled_rule_description: "Run {{ lambda_function_name }}"
+    aws_lambda_scheduled_rule_expression: '{{ lambda_scheduled_rule_expression }}'
+
+- name: Cleanup tempfile
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ tempfile.path }}.zip"
+    - "{{ tempfile.path }}.py"
+    - "{{ tempfile.path }}"

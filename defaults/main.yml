@@ -1,0 +1,10 @@
+---
+# defaults file for ansible-role-ec2-volume-management
+iam_role_name: "volume-management-iam-role"
+lambda_function_name: "ec2-vol-management"
+lambda_runtime: python2.7
+# Default run daily
+lambda_scheduled_rule_expression: 'cron(0 1 * * ? *)'
+# Python string as a list of regions you want to scan for volumes. It will be
+# templated into the python scripts.
+regions: "['ap-southeast-2']"
