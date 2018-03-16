@@ -7,4 +7,7 @@ lambda_runtime: python2.7
 lambda_scheduled_rule_expression: 'cron(0 12 * * ? *)'
 # Python string as a list of regions you want to scan for volumes. It will be
 # templated into the python scripts.
-regions: "['ap-southeast-2']"
+lambda_environment:
+  REGIONS: "{{ region }},"
+  RETENTION_DAYS: "14"
+  AWS_ACCOUNT_ID: "{{ aws_account_id }}"

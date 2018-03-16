@@ -32,12 +32,30 @@ Requirements
 Role Variables
 --------------
 
-- `regions` - Optional - A string with python syntax as a python list of all
-  region you want to scan for volumes and snapshots.
+- `lambda_environment` - Optional - A dict to set the env variable for the python script
 
-  Default value is a list with one element taking the current variable `region`
+  The keys are followed
+  - `REGIONS` - coma separated region string - default "`region`,". We will scan object for each region
+  - `RETENTION_DAYS` - number of days to keep
 
-- `retention_days` - Optional - Default: 7 - Number of days to keep snapshot.
+  - `SNAPSHOT_CREATE_FILTER`
+  - `SNAPSHOT_DELETE_FILTER`
+  - `AMI_DEREGISTER_FILTER`
+
+  Optional - default value in the example below.
+
+  They are a python string which will be evaluated into a python list of
+  filters. See example below.
+
+  Examples:
+  ```
+  lambda_environment:
+    REGIONS: "ap-southeast-2,"
+    RETENTION_DAYS: "14"
+    SNAPSHOT_CREATE_FILTER: '[{"Name":"tag:Backup", "Values": ["yes"]}, {"Name": "status", "Values": ["in-use"]}]'
+    SNAPSHOT_DELETE_FILTER: '[{"Name":"tag:Backup", "Values": ["yes"]}, {"Name": "tag:Name", "Values": ["*"]}]'
+    AMI_DEREGISTER_FILTER: '[{"Name": "tag:Application", "Values": ["*"]}]'
+  ```
 
 - `lambda_scheduled_rule_expression` - Optional - Default: 'cron(0 1 \* \* ? \*)' (run daily)
 
@@ -52,7 +70,10 @@ Example Playbook
 ```
 - hosts: localhost
   vars:
-    region: "ap-southeast-2"
+    lambda_environment:
+      REGIONS: "ap-southeast-2,"
+      RETENTION_DAYS: 14
+
     profile: "act2_non_prod"
   roles:
     - ec2-volumes-management
