@@ -23,8 +23,7 @@ def create_snapshot(ec2, reg, filters=[], context={}):
         # Find name tag for volume if it exists
         if 'Tags' in volume:
             for tags in volume['Tags']:
-                if tags["Key"] in ['Name', 'Backup']:
-                    snapshot_tags.append({'Key': tags["Key"],'Value': tags["Value"]})
+                snapshot_tags.append({'Key': tags["Key"],'Value': tags["Value"]})
         # Add volume name to snapshot for easier identification
         snapshot.create_tags(Tags=snapshot_tags)
 
