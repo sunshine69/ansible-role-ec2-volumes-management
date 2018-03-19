@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import os
 import re
 
-def create_snapshot(ec2, reg, filters):
+def create_snapshot(ec2, reg, filters=[], context={}):
     result = ec2.describe_volumes(Filters=filters)
 
     for volume in result['Volumes']:
@@ -13,8 +13,8 @@ def create_snapshot(ec2, reg, filters):
         # Create snapshot
         result = ec2.create_snapshot(
             VolumeId=volume['VolumeId'],
-            Description='Created by Lambda backup function {{ lambda_function_name }}'
-            )
+            Description='Created by Lambda function %s for backup from %s' % (context.function_name, volume['VolumeId'])
+          )
         # Get snapshot resource
         ec2resource = boto3.resource('ec2', region_name=reg)
         snapshot = ec2resource.Snapshot(result['SnapshotId'])
@@ -154,7 +154,7 @@ def lambda_handler(event, context):
     for reg in regions:
         if not reg: continue
         ec2 = ses.client('ec2', region_name=reg)
-        create_snapshot(ec2, reg, filters=snapshot_create_filter)
+        create_snapshot(ec2, reg, filters=snapshot_create_filter, context=context)
 
         ec2resource = ses.resource('ec2', region_name=reg)
 
