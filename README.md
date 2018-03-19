@@ -5,24 +5,24 @@ Implement snapshot backup and cleanup.
 
 This role will:
 
-- Scan all volumes in the `regions` with tag Backup: yes and Status: in-use
-- Then create a snapshot backup daily. Snapshot will be tag with the same 'Name' and a key 'Backup'
+- Scan all volumes in the `regions` with tag Backup: yes and Status: in-use (you can custom the Filter - see example)
 
-- Scan all snapshot in the `regions` with creation time longer than `retention_days` days with tag 'Name': '\*' and 'Backup': yes
-- Then remove them except the last 1 backup
+  Then create a snapshot backup daily. Snapshot will be tag with the same 'Name' and a key 'Backup'
+
+- Scan all snapshot in the `regions` with creation time longer than `retention_days` days with tag 'Name': '\*' and 'Backup': yes - again it can be customised with your own filters.
+
+  Then remove them except the last 1 backup
 
 - Scan and remove all snapshots that was created by the AMI launch but AMI has already been de-registered.
 
+- Scan all AMI and then deregister ami if:
+
+  - No (running/stopped) ec2 instances use it
+  - Matching the filters condition
+  - creation time older than `retention_days`
+
 Requirements
 ------------
-
-- `aws_account_id` - Required - The account id that you want to scan for objects.
-
-- `aws_profile_account` - Optional
-
-  If you run without supplying the variable `profile` and `region` it will use a role
-  `aws_profile_account` which will try to assume a IAM role
-  `profile_account_role_arn` to obtain the permission to do the task.
 
 - `ansible-role-aws-lambda` - Required. See https://github.com/willthames/ansible-role-aws-lambda
 
@@ -32,6 +32,14 @@ Requirements
 
 Role Variables
 --------------
+
+- `aws_account_id` - Required - The account id that you want to scan for objects.
+
+- `aws_profile_account` - Optional
+
+  If you run without supplying the variable `profile` and `region` it will use a role
+  `aws_profile_account` which will try to assume a IAM role
+  `profile_account_role_arn` to obtain the permission to do the task.
 
 - `lambda_environment` - Optional - A dict to set the env variable for the python script
 
