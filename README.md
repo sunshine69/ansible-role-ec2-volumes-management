@@ -35,11 +35,25 @@ Role Variables
 
 - `aws_account_id` - Required - The account id that you want to scan for objects.
 
-- `aws_profile_account` - Optional
 
-  If you run without supplying the variable `profile` and `region` it will use a role
-  `aws_profile_account` which will try to assume a IAM role
-  `profile_account_role_arn` to obtain the permission to do the task.
+- `iam_role_name` - Optional - Default:  'volume-management-iam-role'
+
+  The IAM role to run the lambda function as. The IAM role will be created by
+  this role to have enough permissions.
+
+- `lambda_function_name` - Optional - Default: "ec2_vol_management"
+
+  If you want to deploy multiple lambda for different type of volumes you can
+  call this role and override the `lambda_function_name` and per each call set
+  the `lambda_environment` (see below) differently.
+
+- `lambda_runtime` - Optional - Default: python2.7
+
+
+- `lambda_scheduled_rule_expression` - Optional - Default:  'cron(0 12 * * ? *)'
+
+  Default run daily. Note that this is GMT time in aws event
+
 
 - `lambda_environment` - Optional - A dict to set the env variable for the python script
 

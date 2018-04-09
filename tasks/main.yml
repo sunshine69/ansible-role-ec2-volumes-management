@@ -1,28 +1,18 @@
 ---
-# tasks file for ansible-role-ec2-volume-management
-- include_role:
-   name: aws_profile_account
-  vars:
-# iam role arn for this ec2 I am running to assume so that I have the
-# permission to do this tasks
-    aws_profile_account_role_arn: "{{ profile_account_role_arn|default() }}"
-    aws_profile_account_role_session_name: 'role: ec2-volume-management'
-    aws_profile_account_region: "{{ profile_account_region|default(region|default()) }}"
-  when: not profile|default()
-
-- name: set credentials fact
-  set_fact:
-    sts_creds: "{{ (sts_result|default({})).sts_creds|default({}) }}"
-  no_log: yes
-
 - name: Get tempfile
   tempfile:
     state: directory
   register: tempfile
 
+- name: Create temporary symlink to the main python script to be sure the lambda function name match with filename
+  file:
+    path: "{{ tempfile.path }}/{{ lambda_function_name }}.py"
+    src: "{{ role_path }}/files/ec2_vol_management.py"
+    state: link
+
 - name: Create zip file
   archive:
-    path: "{{ role_path }}/files/{{ lambda_function_name }}.py"
+    path: "{{ tempfile.path }}/{{ lambda_function_name }}.py"
     dest: "{{ tempfile.path }}/{{ lambda_function_name }}.zip"
     format: zip
 
@@ -31,9 +21,6 @@
   vars:
     aws_lambda_profile: "{{ profile|default() }}"
     aws_lambda_region: "{{ region|default() }}"
-    aws_lambda_access_key: "{{ sts_creds.access_key|default() }}"
-    aws_lambda_secret_key: "{{ sts_creds.secret_key|default() }}"
-    aws_lambda_security_token: "{{ sts_creds.session_token|default() }}"
     aws_lambda_function_name: "{{ lambda_function_name }}"
     aws_lambda_handler: "{{ lambda_function_name }}.lambda_handler"
     aws_lambda_runtime: "{{ lambda_runtime }}"
