@@ -9,7 +9,7 @@ def create_snapshot(ec2, reg, filters=[], context={}):
     result = ec2.describe_volumes(Filters=filters)
 
     for volume in result['Volumes']:
-        print "Backing up %s in %s" % (volume['VolumeId'], volume['AvailabilityZone'])
+        print("Backing up %s in %s" % (volume['VolumeId'], volume['AvailabilityZone']))
         # Create snapshot
         result = ec2.create_snapshot(
             VolumeId=volume['VolumeId'],
@@ -76,7 +76,7 @@ def cleanup_old_snapshots(
 
     delete_time = int(datetime.now().strftime('%s')) - retention_days * 86400
 
-    print 'Deleting any snapshots older than {days} days'.format(days=retention_days)
+    print('Deleting any snapshots older than {days} days'.format(days=retention_days))
 
     snapshot_iterator = ec2resource.snapshots.filter(Filters=filters)
     get_last_start_time = lambda obj: int(obj.start_time.strftime('%s'))
@@ -94,15 +94,15 @@ def cleanup_old_snapshots(
         if start_time < delete_time:
             deletion_counter = deletion_counter + 1
             size_counter = size_counter + snapshot.volume_size
-            print 'Deleting {id}'.format(id=snapshot.snapshot_id)
+            print('Deleting {id}'.format(id=snapshot.snapshot_id))
             if not dry_run:
                 snapshot.delete()
             else:
                 print("   skipped as dry_run is true")
-    print 'Deleted {number} snapshots totalling {size} GB'.format(
+    print('Deleted {number} snapshots totalling {size} GB'.format(
         number=deletion_counter,
         size=size_counter
-        )
+        ))
 
 
 def lambda_handler(event, context):
