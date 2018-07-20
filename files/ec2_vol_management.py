@@ -86,10 +86,10 @@ def cleanup_old_snapshots(
     size_counter = 0
     total_snapshots = len(snapshots)
 
-    snapshots_to_delete = snapshots[0:keep_at_least]
+    snapshots_to_delete = snapshots[0:-1 * keep_at_least]
 
     for snapshot in snapshots_to_delete:
-        start_time = snapshot.start_time.strftime('%s')
+        start_time = int(snapshot.start_time.strftime('%s'))
 
         if start_time < delete_time:
             deletion_counter = deletion_counter + 1
