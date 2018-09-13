@@ -1,5 +1,5 @@
 import ast
-import boto3
+import boto3, botocore
 from datetime import datetime, timedelta
 import logging
 import os
@@ -232,7 +232,7 @@ def lambda_handler(event, context):
 
         cleanup_detach_snapshot(ec2resource, aws_account_id, dry_run=False)
 
-        create_amis(ec2, cycle_tag)
+        create_amis(ec2resource, cycle_tag)
 
         deregister_ami(ec2resource, aws_account_id, filters=ami_deregister_filter, dry_run=False)
 
