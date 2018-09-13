@@ -53,6 +53,11 @@ def deregister_ami(ec2, aws_account_id, filters=[], retention_days=14, dry_run=T
     images = ec2.images.filter(Owners=[aws_account_id], Filters=filters)
     images_in_use = set([instance.image_id for instance in instances])
     images_to_deregister_dict = { image.id: image for image in images if image.id not in images_in_use }
+
+    if len(images_to_deregister_dict.keys()) == 1:
+        print("    skipped as as we only have one AMI left")
+        return {}
+
     # deregister all the AMIs older than retention_days
     today = datetime.now()
     date_to_keep = today - timedelta(days=retention_days)
