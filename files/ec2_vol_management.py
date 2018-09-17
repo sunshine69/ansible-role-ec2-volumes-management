@@ -83,7 +83,7 @@ def deregister_ami(ec2, aws_account_id, filters=[], retention_days=14, dry_run=T
                     r = re.match(r".*for (ami-.*) from.*", snapshot.description)
                     if r:
                         #r.groups()[0] will contain the ami id
-                        if r.groups()[0] == ami.id:
+                        if r.groups()[0] == image.id:
                             logger.info("found snapshot belonging to %s. snapshot with image_id %s will be deleted", image.id, snapshot.snapshot_id)
                             snapshot.delete()
             else:
