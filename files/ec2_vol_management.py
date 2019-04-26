@@ -115,7 +115,7 @@ def create_amis(ec2, cycle_tag='daily'):
                                                    utc_now.minute,
                                                    utc_now.second)
             #AMIs names cannot contain ','
-            name = name.replace(',', '_')
+            name = name.replace(',', '_').replace(':', '_')
 
             image = instance.create_image(
                 DryRun=False,
