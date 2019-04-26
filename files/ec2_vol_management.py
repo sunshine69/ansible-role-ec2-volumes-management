@@ -46,6 +46,45 @@ def cleanup_detach_snapshot(ec2, aws_account_id, dry_run=True):
                 else:
                     logger.info("    skipped as dry_run is true")
 
+
+def cleanup_old_snapshots(
+        ec2resource,
+        retention_days=7,
+        filters=[],
+        keep_at_least=1,
+        dry_run=True):
+
+    delete_time = int(datetime.now().strftime('%s')) - retention_days * 86400
+
+    logger.info('Deleting any snapshots older than {days} days'.format(days=retention_days))
+
+    snapshot_iterator = ec2resource.snapshots.filter(Filters=filters)
+    get_last_start_time = lambda obj: int(obj.start_time.strftime('%s'))
+    snapshots = sorted([ x for x in snapshot_iterator ], key=get_last_start_time)
+
+    deletion_counter = 0
+    size_counter = 0
+    total_snapshots = len(snapshots)
+
+    snapshots_to_delete = snapshots[0:-1 * keep_at_least]
+
+    for snapshot in snapshots_to_delete:
+        start_time = int(snapshot.start_time.strftime('%s'))
+
+        if start_time < delete_time:
+            deletion_counter = deletion_counter + 1
+            size_counter = size_counter + snapshot.volume_size
+            logger.info('Deleting {id}'.format(id=snapshot.snapshot_id))
+            if not dry_run:
+                snapshot.delete()
+            else:
+                logger.info("   skipped as dry_run is true")
+    logger.info('Deleted {number} snapshots totalling {size} GB'.format(
+        number=deletion_counter,
+        size=size_counter
+        ))
+
+
 def deregister_ami(ec2, aws_account_id, filters=[], retention_days=14, dry_run=True):
     """Deregister ami if:
     - No (running/stopped) ec2 instances use it
@@ -88,6 +127,7 @@ def deregister_ami(ec2, aws_account_id, filters=[], retention_days=14, dry_run=T
                             snapshot.delete()
             else:
                 logger.info("    skipped as dry_run is true")
+
 
 # Takes a list of EC2 instances with tag 'ami-creation': true - IDs and creates AMIs
 # Copy from one of my work mate into here with small modification
@@ -136,43 +176,6 @@ def create_amis(ec2, cycle_tag='daily'):
             logger.info('caught exception: Error message: %s', err)
 
 
-def cleanup_old_snapshots(
-        ec2resource,
-        retention_days=7,
-        filters=[],
-        keep_at_least=1,
-        dry_run=True):
-
-    delete_time = int(datetime.now().strftime('%s')) - retention_days * 86400
-
-    logger.info('Deleting any snapshots older than {days} days'.format(days=retention_days))
-
-    snapshot_iterator = ec2resource.snapshots.filter(Filters=filters)
-    get_last_start_time = lambda obj: int(obj.start_time.strftime('%s'))
-    snapshots = sorted([ x for x in snapshot_iterator ], key=get_last_start_time)
-
-    deletion_counter = 0
-    size_counter = 0
-    total_snapshots = len(snapshots)
-
-    snapshots_to_delete = snapshots[0:-1 * keep_at_least]
-
-    for snapshot in snapshots_to_delete:
-        start_time = int(snapshot.start_time.strftime('%s'))
-
-        if start_time < delete_time:
-            deletion_counter = deletion_counter + 1
-            size_counter = size_counter + snapshot.volume_size
-            logger.info('Deleting {id}'.format(id=snapshot.snapshot_id))
-            if not dry_run:
-                snapshot.delete()
-            else:
-                logger.info("   skipped as dry_run is true")
-    logger.info('Deleted {number} snapshots totalling {size} GB'.format(
-        number=deletion_counter,
-        size=size_counter
-        ))
-
 
 def lambda_handler(event, context):
     regions = os.environ.get('REGIONS', 'ap-southeast-2').split(',')
@@ -180,6 +183,7 @@ def lambda_handler(event, context):
     aws_account_id = os.environ.get('AWS_ACCOUNT_ID')
     retention_days = int(os.environ.get('RETENTION_DAYS', 14))
 
+    # If volume is 'in-use' and having tag:Backup = 'yes' then we create snapshot
     snapshot_create_filter_default = [
                 {
                     'Name': 'status',
@@ -190,14 +194,12 @@ def lambda_handler(event, context):
                     'Values': ['yes']
                 }
             ]
+
     snapshot_create_filter = ast.literal_eval( os.environ.get('SNAPSHOT_CREATE_FILTER', "None"))
     snapshot_create_filter = snapshot_create_filter if snapshot_create_filter else snapshot_create_filter_default
 
+    # Delete these snapshot created by this script only
     snapshot_delete_filter_default = [
-                {
-                    'Name': 'tag:Name',
-                    'Values': ['*']
-                },
                 {
                     'Name': 'tag:Backup',
                     'Values': ['yes']
@@ -207,9 +209,10 @@ def lambda_handler(event, context):
     snapshot_delete_filter = ast.literal_eval( os.environ.get('SNAPSHOT_DELETE_FILTER', "None"))
     snapshot_delete_filter = snapshot_delete_filter if snapshot_delete_filter else snapshot_delete_filter_default
 
+    # Cleanup the amis created by this script (tag:Backup = yes) only
     ami_deregister_filter_default = [
         {
-            'Name': 'tag:Application',
+            'Name': 'tag:ami-cycle',
             'Values': ['*']
         }
         ]
