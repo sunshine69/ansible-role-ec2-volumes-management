@@ -201,6 +201,10 @@ def lambda_handler(event, context):
     # Delete these snapshot created by this script only
     snapshot_delete_filter_default = [
                 {
+                    'Name': 'tag:Name',
+                    'Values': ['*']
+                },
+                {
                     'Name': 'tag:Backup',
                     'Values': ['yes']
                 }
@@ -209,16 +213,65 @@ def lambda_handler(event, context):
     snapshot_delete_filter = ast.literal_eval( os.environ.get('SNAPSHOT_DELETE_FILTER', "None"))
     snapshot_delete_filter = snapshot_delete_filter if snapshot_delete_filter else snapshot_delete_filter_default
 
-    # Cleanup the amis created by this script (tag:Backup = yes) only
-    ami_deregister_filter_default = [
-        {
-            'Name': 'tag:ami-cycle',
-            'Values': ['*']
-        }
+    ami_deregister_filters_default = [
+            [
+		        {
+		            'Name': 'tag:ami-cycle',
+		            'Values': ['*']
+        	    },
+                {
+                    'Name': 'tag:Application',
+                    'Values': ['ecs-agent']
+                },
+                {
+                    'Name': 'tag:Environment',
+                    'Values': ['int']
+                }
+            ],
+            [
+                {
+                    'Name': 'tag:Application',
+                    'Values': ['ecs-agent']
+                },
+                {
+                    'Name': 'tag:Environment',
+                    'Values': ['qa']
+                }
+            ],
+            [
+                {
+                    'Name': 'tag:BuildLayer',
+                    'Values': ['system']
+                },
+                {
+                    'Name': 'tag:Version',
+                    'Values': ['ubuntu-1604']
+                }
+            ],
+            [
+                {
+                    'Name': 'tag:BuildLayer',
+                    'Values': ['system']
+                },
+                {
+                    'Name': 'tag:Version',
+                    'Values': ['ubuntu-1804']
+                }
+            ],
+            [
+                {
+                    'Name': 'tag:BuildLayer',
+                    'Values': ['platform']
+                },
+                {
+                    'Name': 'tag:Platform',
+                    'Values': ['java']
+                }
+            ]
         ]
 
-    ami_deregister_filter = ast.literal_eval( os.environ.get('AMI_DEREGISTER_FILTER', "None"))
-    ami_deregister_filter = ami_deregister_filter if ami_deregister_filter else ami_deregister_filter_default
+    ami_deregister_filters = ast.literal_eval( os.environ.get('AMI_DEREGISTER_FILTER', "None"))
+    ami_deregister_filters = ami_deregister_filters if ami_deregister_filters else ami_deregister_filters_default
 
     # Iterate over regions
 
@@ -237,6 +290,7 @@ def lambda_handler(event, context):
 
         create_amis(ec2resource, cycle_tag)
 
-        deregister_ami(ec2resource, aws_account_id, filters=ami_deregister_filter, dry_run=False)
+        for ami_deregister_filter in ami_deregister_filters:
+            deregister_ami(ec2resource, aws_account_id, filters=ami_deregister_filter, dry_run=False)
 
     return 'OK'
