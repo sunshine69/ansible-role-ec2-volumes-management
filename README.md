@@ -78,7 +78,7 @@ Role Variables
     RETENTION_DAYS: "14"
     SNAPSHOT_CREATE_FILTER: '[{"Name":"tag:Backup", "Values": ["yes"]}, {"Name": "status", "Values": ["in-use"]}]'
     SNAPSHOT_DELETE_FILTER: '[{"Name":"tag:Backup", "Values": ["yes"]}, {"Name": "tag:Name", "Values": ["*"]}]'
-    AMI_DEREGISTER_FILTER: '[{"Name": "tag:Application", "Values": ["*"]}]'
+    AMI_DEREGISTER_FILTER: '[ [{"Name": "tag:Application", "Values": ["*"]}] ]'
   ```
 
 - `lambda_scheduled_rule_expression` - Optional - Default: 'cron(0 1 \* \* ? \*)' (run daily)

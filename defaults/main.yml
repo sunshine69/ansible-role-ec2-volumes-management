@@ -7,7 +7,50 @@ lambda_runtime: python2.7
 lambda_scheduled_rule_expression: 'cron(0 12 * * ? *)'
 # Python string as a list of regions you want to scan for volumes. It will be
 # templated into the python scripts.
+
+# Passed AMI_DEREGISTER_FILTER as a python string to be evaluated. Example
+# below. Each row list a combination of tags that must be matched. And the
+# script will walk through each row to get filter the AMI and each of row it will keep one last ami.
+
+# [
+#   [
+#       {
+#           'Name': 'tag:ami-cycle',
+#           'Values': ['*']
+#       },
+#       {
+#           'Name': 'tag:Application',
+#           'Values': ['ecs-agent']
+#       },
+#       {
+#           'Name': 'tag:Environment',
+#           'Values': ['int']
+#       }
+#   ],
+#   [
+#       {
+#           'Name': 'tag:Application',
+#           'Values': ['ecs-agent']
+#       },
+#       {
+#           'Name': 'tag:Environment',
+#           'Values': ['qa']
+#       }
+#   ],
+#
+# ]
+
+# DONOT put the tag filter too generic as it will remove all if matched and
+# only keep last one which might be not enough. However it never deregister AMI
+# if it is in use by an ec2.
+
+# For all other filters it is just a simple list of tags (similar like one row
+# in the above).
+
 lambda_environment:
   REGIONS: "{{ region }},"
   RETENTION_DAYS: "14"
   AWS_ACCOUNT_ID: "{{ aws_account_id }}"
+  #AMI_DEREGISTER_FILTER:
+  #SNAPSHOT_DELETE_FILTER:
+  #SNAPSHOT_CREATE_FILTER:
